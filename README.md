@@ -4,7 +4,7 @@ VLESS Reality protocol script based on Sing-box kernel
 
 
 ```shell
-wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/sbox-reality/main/reality.sh && bash reality.sh
+wget -N --no-check-certificate https://raw.githubusercontent.com/mer30hamid/sbox-reality/main/reality.sh && bash reality.sh
 ```
 
 ## Acknowledgments
