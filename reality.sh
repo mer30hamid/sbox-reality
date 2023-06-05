@@ -23,9 +23,9 @@ PACKAGE_UPDATE=("apt-get update" "apt-get update" "yum -y update" "yum -y update
 PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y install" "yum -y install" "apk add -f")
 PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove" "apk del -f")
 
-[[ $EUID -ne 0 ]] && red "注意：请在root用户下运行脚本" && exit 1
+[[ $EUID -ne 0 ]] && red "Note: Please run the script under the root user" && exit 1
 
-CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut -d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" "$(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$/d')")
+CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut - d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" " $(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$ /d')")
 
 for i in "${CMD[@]}"; do
     SYS="$i" && [[ -n $SYS ]] && break
@@ -37,15 +37,15 @@ for ((int = 0; int < ${#REGEX[@]}; int++)); do
     fi
 done
 
-[[ -z $SYSTEM ]] && red "不支持当前VPS系统, 请使用主流的操作系统" && exit 1
+[[ -z $SYSTEM ]] && red "The current VPS system is not supported, please use a mainstream operating system" && exit 1
 
-# 检测 VPS 处理器架构
+# Detect VPS processor architecture
 archAffix() {
     case "$(uname -m)" in
         x86_64 | amd64) echo 'amd64' ;;
         armv8 | arm64 | aarch64) echo 'arm64' ;;
         s390x) echo 's390x' ;;
-        *) red "不支持的CPU架构!" && exit 1 ;;
+        *) red "Unsupported CPU architecture!" && exit 1 ;;
     esac
 }
 
@@ -61,7 +61,7 @@ install_singbox(){
 
     last_version=$(curl -s https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | sed -n 4p | tr -d ',"' | awk '{print $1}')
     if [[ -z $last_version ]]; then
-        red "获取版本信息失败，请检查VPS的网络状态！"
+        red "Failed to get the version information, please check the network status of the VPS!"
         exit 1
     fi
 
@@ -76,36 +76,36 @@ install_singbox(){
     fi
 
     if [[ -f "/etc/systemd/system/sing-box.service" ]]; then
-        green "Sing-box 安装成功！"
+        green "Sing-box installed successfully!"
     else
-        red "Sing-box 安装失败！"
+        red "Sing-box installation failed!"
         exit 1
     fi
 
-    # 询问用户有关 Reality 端口、UUID 和回落域名
-    read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+     # Ask user about Reality port, UUID and fallback domain name
+     read -p "Set Sing-box port [1-65535] (Enter will randomly assign port):" port
     [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
     until [[ -z $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
         if [[ -n $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
-            read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+             echo -e "The ${RED} $port ${PLAIN} port is already occupied by another program, please change the port and try again!"
+             read -p "Set Sing-box port [1-65535] (Enter will randomly assign port):" port
             [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
         fi
     done
-    read -rp "请输入 UUID [可留空待脚本生成]: " UUID
+    read -rp "Please enter UUID [can be left blank for script generation]: " UUID
     [[ -z $UUID ]] && UUID=$(sing-box generate uuid)
-    read -rp "请输入配置回落的域名 [默认微软官网]: " dest_server
+    read -rp "Please enter the domain name [default Microsoft official website]: " dest_server
     [[ -z $dest_server ]] && dest_server="www.microsoft.com"
 
     # Reality short-id
     short_id=$(openssl rand -hex 8)
 
-    # Reality 公私钥
+     # Reality public and private keys
     keys=$(sing-box generate reality-keypair)
     private_key=$(echo $keys | awk -F " " '{print $2}')
     public_key=$(echo $keys | awk -F " " '{print $4}')
 
-    # 将默认的配置文件删除，并写入 Reality 配置
+     # Delete the default configuration file and write it into the Reality configuration
     rm -f /etc/sing-box/config.json
     cat << EOF > /etc/sing-box/config.json
 {
@@ -188,7 +188,7 @@ EOF
 
     mkdir /root/sing-box >/dev/null 2>&1
 
-    # 生成 vless 分享链接及 Clash Meta 配置文件
+     # Generate vless sharing link and Clash Meta configuration file
     share_link="vless://$UUID@$IP:$port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$dest_server&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#Misaka-Reality"
     echo ${share_link} > /root/sing-box/share-link.txt
     cat << EOF > /root/sing-box/clash-meta.yaml
@@ -240,14 +240,14 @@ EOF
     systemctl enable sing-box >/dev/null 2>&1
 
     if [[ -n $(systemctl status sing-box 2>/dev/null | grep -w active) && -f '/etc/sing-box/config.json' ]]; then
-        green "Sing-box 服务启动成功"
+        green "Sing-box service started successfully"
     else
-        red "Sing-box 服务启动失败，请运行 systemctl status sing-box 查看服务状态并反馈，脚本退出" && exit 1
+        red "The Sing-box service failed to start, please run systemctl status sing-box to view the service status and give feedback, the script exits" && exit 1
     fi
 
-    yellow "下面是 Sing-box Reality 的分享链接，并已保存至 /root/sing-box/share-link.txt"
+    yellow "The following is the share link of Sing-box Reality, and it has been saved to /root/sing-box/share-link.txt"
     red $share_link
-    yellow "Clash Meta 配置文件已保存至 /root/sing-box/clash-meta.yaml"
+    yellow "Clash Meta configuration file saved to /root/sing-box/clash-meta.yaml"
 }
 
 uninstall_singbox(){
@@ -255,7 +255,7 @@ uninstall_singbox(){
     systemctl disable sing-box >/dev/null 2>&1
     ${PACKAGE_UNINSTALL} sing-box
     rm -rf /root/sing-box
-    green "Sing-box 已彻底卸载成功！"
+    green "Sing-box has been completely uninstalled successfully!"
 }
 
 start_singbox(){
@@ -271,12 +271,12 @@ stop_singbox(){
 changeport(){
     old_port=$(cat /etc/sing-box/config.json | grep listen_port | awk -F ": " '{print $2}' | sed "s/,//g")
 
-    read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+    read -p "Set Sing-box port [1-65535] (Enter will randomly assign port):" port
     [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
     until [[ -z $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; do
         if [[ -n $(ss -ntlp | awk '{print $4}' | sed 's/.*://g' | grep -w "$port") ]]; then
-            echo -e "${RED} $port ${PLAIN} 端口已经被其他程序占用，请更换端口重试！"
-            read -p "设置 Sing-box 端口 [1-65535]（回车则随机分配端口）：" port
+             echo -e "The ${RED} $port ${PLAIN} port is already occupied by another program, please change the port and try again!"
+             read -p "Set Sing-box port [1-65535] (Enter will randomly assign port):" port
             [[ -z $port ]] && port=$(shuf -i 2000-65535 -n 1)
         fi
     done
@@ -285,42 +285,42 @@ changeport(){
     sed -i "s/$old_port/$port/g" /root/sing-box/share-link.txt
     stop_singbox && start_singbox
 
-    green "Sing-box 端口已修改成功！"
+    green "Sing-box port has been modified successfully!"
 }
 
 changeuuid(){
     old_uuid=$(cat /etc/sing-box/config.json | grep uuid | awk -F ": " '{print $2}' | sed "s/\"//g" | sed "s/,//g")
 
-    read -rp "请输入 UUID [可留空待脚本生成]: " UUID
+    read -rp "Please enter UUID [can be left blank for script generation]: " UUID
     [[ -z $UUID ]] && UUID=$(sing-box generate uuid)
 
     sed -i "s/$old_uuid/$UUID/g" /etc/sing-box/config.json
     sed -i "s/$old_uuid/$UUID/g" /root/sing-box/share-link.txt
     stop_singbox && start_singbox
 
-    green "Sing-box UUID 已修改成功！"
+    green "Sing-box UUID has been modified successfully!"
 }
 
 changedest(){
-    old_dest=$(cat /etc/sing-box/config.json | grep server | sed -n 1p | awk -F ": " '{print $2}' | sed "s/\"//g" | sed "s/,//g")
+    old_dest=$(cat /etc/sing-box/config.json | grep server | sed -n 1p | awk -F ": " '{print $2}' | sed "s/\"//g" | sed " s/,//g")
 
-    read -rp "请输入配置回落的域名 [默认微软官网]: " dest_server
+    read -rp "Please enter the domain name [default Microsoft official website]: " dest_server
     [[ -z $dest_server ]] && dest_server="www.microsoft.com"
 
     sed -i "s/$old_dest/$dest_server/g" /etc/sing-box/config.json
     sed -i "s/$old_dest/$dest_server/g" /root/sing-box/share-link.txt
     stop_singbox && start_singbox
 
-    green "Sing-box 回落域名已修改成功！"
+    green "Sing-box fallback domain name has been modified successfully!"
 }
 
 change_conf(){
-    green "Sing-box 配置变更选择如下:"
-    echo -e " ${GREEN}1.${PLAIN} 修改端口"
-    echo -e " ${GREEN}2.${PLAIN} 修改UUID"
-    echo -e " ${GREEN}3.${PLAIN} 修改回落域名"
+    green "Sing-box configuration change options are as follows:"
+    echo -e " ${GREEN}1.${PLAIN} modify port"
+    echo -e " ${GREEN}2.${PLAIN} Modify UUID"
+    echo -e " ${GREEN}3.${PLAIN} modify fallback domain name"
     echo ""
-    read -p " 请选择操作 [1-3]: " confAnswer
+    read -p "Please select action [1-3]: " confAnswer
     case $confAnswer in
         1 ) changeport ;;
         2 ) changeuuid ;;
@@ -332,28 +332,28 @@ change_conf(){
 menu(){
     clear
     echo "#############################################################"
-    echo -e "#               ${RED}Sing-box Reality 一键安装脚本${PLAIN}               #"
-    echo -e "# ${GREEN}作者${PLAIN}: MisakaNo の 小破站                                  #"
-    echo -e "# ${GREEN}博客${PLAIN}: https://blog.misaka.rest                            #"
-    echo -e "# ${GREEN}GitHub 项目${PLAIN}: https://github.com/Misaka-blog               #"
-    echo -e "# ${GREEN}GitLab 项目${PLAIN}: https://gitlab.com/Misaka-blog               #"
-    echo -e "# ${GREEN}Telegram 频道${PLAIN}: https://t.me/misakanocchannel              #"
-    echo -e "# ${GREEN}Telegram 群组${PLAIN}: https://t.me/misakanoc                     #"
-    echo -e "# ${GREEN}YouTube 频道${PLAIN}: https://www.youtube.com/@misaka-blog        #"
+    echo -e "#               ${RED}Sing-box Reality one-click installation script ${PLAIN}               #"
+    echo -e "# ${GREEN}Author ${PLAIN}: MisakaNo � Xiaopozhan                                  #"
+    echo -e "# ${GREEN}blog ${PLAIN}: https://blog.misaka.rest #"
+    echo -e "# ${GREEN}GitHub project ${PLAIN}: https://github.com/Misaka-blog               #"
+    echo -e "# ${GREEN}GitLab project ${PLAIN}: https://gitlab.com/Misaka-blog               #"
+    echo -e "# ${GREEN}Telegram channel ${PLAIN}: https://t.me/misakanocchannel              #"
+    echo -e "# ${GREEN}Telegram group ${PLAIN}: https://t.me/misakanoc                     #"
+    echo -e "# ${GREEN}YouTube channel ${PLAIN}: https://www.youtube.com/@misaka-blog        #"
     echo "#############################################################"
     echo ""
-    echo -e " ${GREEN}1.${PLAIN} 安装 Sing-box Reality"
-    echo -e " ${GREEN}2.${PLAIN} 卸载 Sing-box Reality"
+    echo -e " ${GREEN}1.${PLAIN} install Sing-box Reality"
+    echo -e " ${GREEN}2.${PLAIN} Uninstall Sing-box Reality"
     echo " -------------"
-    echo -e " ${GREEN}3.${PLAIN} 启动 Sing-box Reality"
-    echo -e " ${GREEN}4.${PLAIN} 停止 Sing-box Reality"
-    echo -e " ${GREEN}5.${PLAIN} 重载 Sing-box Reality"
+    echo -e " ${GREEN}3.${PLAIN} start Sing-box Reality"
+    echo -e " ${GREEN}4.${PLAIN} stop Sing-box Reality"
+    echo -e " ${GREEN}5.${PLAIN} reload Sing-box Reality"
     echo " -------------"
-    echo -e " ${GREEN}6.${PLAIN} 修改 Sing-box Reality 配置"
+    echo -e " ${GREEN}6.${PLAIN} modify Sing-box Reality configuration"
     echo " -------------"
-    echo -e " ${GREEN}0.${PLAIN} 退出"
+    echo -e " ${GREEN}0.${PLAIN} exit"
     echo ""
-    read -rp " 请输入选项 [0-6] ：" answer
+    read -rp "Please enter options [0-6]:" answer
     case $answer in
         1) install_singbox ;;
         2) uninstall_singbox ;;
@@ -361,7 +361,7 @@ menu(){
         4) stop_singbox ;;
         5) stop_singbox && start_singbox ;;
         6) change_conf ;;
-        *) red "请输入正确的选项 [0-6]！" && exit 1 ;;
+        *) red "Please enter the correct option [0-6]!" && exit 1 ;;
     esac
 }
 

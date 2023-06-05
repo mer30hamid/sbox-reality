@@ -1,17 +1,17 @@
 # sbox-reality
 
-基于 Sing-box 内核的 VLESS Reality 协议脚本
+VLESS Reality protocol script based on Sing-box kernel
 
 
 ```shell
 wget -N --no-check-certificate https://raw.githubusercontent.com/Misaka-blog/sbox-reality/main/reality.sh && bash reality.sh
 ```
 
-## 鸣谢
+## Acknowledgments
 
-* BoxXt 的 Sing-box Reality 项目：https://github.com/BoxXt/installReality
+* BoxXt 的 Sing-box Reality project: https://github.com/BoxXt/installReality
 
-## 赞助
+## sponsorship
 
 爱发电：https://afdian.net/a/Misaka-blog
 
